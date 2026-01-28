@@ -31,7 +31,7 @@ class RobotSACH:
         self.page = None
     
     def iniciar_navegador(self):
-        """Inicia el navegador Playwright - con storage state si existe"""
+        """Inicia el navegador Playwright - con persistent context para evitar captcha"""
         try:
             print("🌐 Iniciando Playwright...")
             sys.stdout.flush()
@@ -46,25 +46,38 @@ class RobotSACH:
             
             print("🚀 Instalando Chromium (si es necesario)...")
             sys.stdout.flush()
-            self.browser = self.playwright.chromium.launch(
-                headless=True,
-                args=[
-                    '--no-sandbox', 
-                    '--disable-setuid-sandbox', 
-                    '--disable-dev-shm-usage', 
-                    '--disable-gpu'
-                ]
-            )
-            print("✅ Navegador instalado correctamente")
+            
+            # Crear contexto persistente para guardar cookies y sesión
+            context_path = "sach_session"
+            print(f"📁 Usando contexto persistente en: {context_path}")
             sys.stdout.flush()
             
-            # Verificar si existe el archivo de sesión
-            if os.path.exists("auth.json"):
-                print("🔑 Usando sesión guardada (auth.json)")
-                self.context = self.browser.new_context(storage_state="auth.json")
-            else:
-                print("🔑 No hay sesión guardada, usando contexto nuevo")
-                self.context = self.browser.new_context()
+            self.browser = self.playwright.chromium.launch(
+                headless=True,
+                args=["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"]
+            )
+            
+            # Crear directorio para sesión persistente si no existe
+            import os
+            if not os.path.exists(context_path):
+                os.makedirs(context_path)
+                print(f"📁 Creado directorio: {context_path}")
+                sys.stdout.flush()
+            
+            # Verificar si ya existe una sesión guardada
+            state_file = f"{context_path}/state.json"
+            if os.path.exists(state_file):
+                print("🔑 Encontrada sesión guardada, verificando si sigue válida...")
+                sys.stdout.flush()
+            
+            # Crear contexto persistente que guarda cookies/sesión
+            self.context = self.browser.new_context(
+                storage_state=state_file,
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+            )
+            
+            print("✅ Navegador instalado correctamente")
+            sys.stdout.flush()
             
             self.page = self.context.new_page()
             
@@ -81,24 +94,64 @@ class RobotSACH:
             return False
     
     def cerrar_navegador(self):
-        """Cierra el navegador"""
-        if self.browser:
-            self.browser.close()
-        if self.playwright:
-            self.playwright.stop()
+        """Cierra el navegador y guarda la sesión persistente"""
+        try:
+            # Guardar estado de la sesión para persistencia
+            if self.context:
+                print("💾 Guardando estado de sesión para persistencia...")
+                sys.stdout.flush()
+                self.context.storage_state(path="sach_session/state.json")
+                print("✅ Sesión guardada correctamente")
+                sys.stdout.flush()
+            
+            if self.browser:
+                self.browser.close()
+            if self.playwright:
+                self.playwright.stop()
+        except Exception as e:
+            print(f"Error cerrando navegador: {e}")
+            sys.stdout.flush()
     
     def hacer_login(self):
-        """Realiza el login en SACH"""
+        """Realiza el login en SACH con verificación y humanización"""
         try:
             print(f"Navegando a {self.sach_url}")
+            sys.stdout.flush()
             self.page.goto(self.sach_url)
             
             # Esperar mínimo para que cargue
-            self.page.wait_for_timeout(1000)
+            self.page.wait_for_timeout(2000)
             
             # Imprimir información de la página actual
             print(f"URL actual: {self.page.url}")
             print(f"Título de la página: {self.page.title()}")
+            sys.stdout.flush()
+            
+            # VERIFICACIÓN: ¿Ya estamos logueados?
+            dashboard_indicators = [
+                'Dashboard',
+                'Panel',
+                'Inicio',
+                'Reservas',
+                'Clientes',
+                'Cabañas',
+                'Logout',
+                'Cerrar sesión',
+                'Salir',
+                'Bienvenido',
+                'Welcome'
+            ]
+            
+            page_content = self.page.content()
+            is_logged_in = any(indicator in page_content for indicator in dashboard_indicators)
+            
+            if is_logged_in:
+                print("✅ Ya estamos logueados en el dashboard")
+                sys.stdout.flush()
+                return "FORM_READY"
+            
+            print("🔐 No estamos logueados, procediendo con login...")
+            sys.stdout.flush()
             
             # Buscar campos de login con más selectores específicos
             user_selectors = [
@@ -153,8 +206,23 @@ class RobotSACH:
             
             if user_input and pass_input:
                 print("Ingresando credenciales...")
+                sys.stdout.flush()
+                
+                # HUMANIZACIÓN: Pequeños retrasos entre acciones
                 user_input.fill(self.sach_user)
+                self.page.wait_for_timeout(500)  # Pequeña pausa después de usuario
+                print("✅ Usuario ingresado")
+                sys.stdout.flush()
+                
                 pass_input.fill(self.sach_pass)
+                self.page.wait_for_timeout(800)  # Pausa más larga antes de enviar
+                print("✅ Contraseña ingresada")
+                sys.stdout.flush()
+                
+                # HUMANIZACIÓN: Pausa antes de hacer clic
+                self.page.wait_for_timeout(1000)
+                print("🔘 Buscando botón de login...")
+                sys.stdout.flush()
                 
                 # Buscar botón de login específicamente "Iniciar Sesión"
                 login_selectors = [
@@ -175,13 +243,17 @@ class RobotSACH:
                         btn = self.page.locator(selector)
                         if btn.count() > 0:
                             print(f"Botón de login encontrado con selector: {selector}")
+                            sys.stdout.flush()
                             btn.first.click()
+                            print("✅ Botón de login presionado")
+                            sys.stdout.flush()
                             break
                     except:
                         continue
                 
                 # Esperar a que redirija después del login
                 print("Esperando redirección después del login...")
+                sys.stdout.flush()
                 self.page.wait_for_timeout(2000)  # Reducido a 2 segundos
                 
                 # Verificar si el login fue exitoso buscando elementos del panel principal
