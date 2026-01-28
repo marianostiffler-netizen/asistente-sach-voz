@@ -2,7 +2,7 @@ from flask import Flask, request, Response
 import os
 import json
 import requests
-from procesar_audio import transcribir_audio, extraer_datos_reserva
+from procesar_audio import ProcesadorAudio
 from cargar_reserva import SACHRobot
 import tempfile
 import urllib.parse
@@ -13,6 +13,9 @@ app = Flask(__name__)
 WHATSAPP_VERIFY_TOKEN = "sach_voice_assistant_2024"
 WHATSAPP_PHONE_NUMBER_ID = "914504238421045"
 WHATSAPP_TOKEN = "EAAW5CS28ei8BQjzSAOZBXSWxAaXi8dvg2ZBjqHk89l41Km4kpw2sKZBlIliyR5mqRaBUxUAERLRO2LtFFIRjHlxdZBL8jNGoRFpnOUDzKdY7xZBS8MwOd3zBazAZBRYKb9acq9rYXs4VPdqiaF0zdy9x28XtK6i9aD30N3DgKrhdNfxgWwASB3bytjDS37H3istcqcavmR7GfhsNCpzUVjrh6ZCD2ZAwR7U3BnXdkPgpSnQxTJRqkhZC3xQLf6iQGMhpFHSEoezv7BmUaMQIAUwZDZD"
+
+# Inicializar procesador de audio
+procesador_audio = ProcesadorAudio()
 
 @app.route('/webhook', methods=['GET', 'POST'])
 def webhook():
@@ -69,12 +72,12 @@ def handle_audio_message(message):
         try:
             # Procesar audio con Groq
             print("🎙️ Procesando audio...")
-            texto_transcrito = transcribir_audio(temp_audio_path)
+            texto_transcrito = procesador_audio.transcribir_audio(temp_audio_path)
             print(f"📝 Texto transcrito: {texto_transcrito}")
             
             # Extraer datos de la reserva
             print("🔍 Extrayendo datos...")
-            datos_reserva = extraer_datos_reserva(texto_transcrito)
+            datos_reserva = procesador_audio.extraer_datos_reserva(texto_transcrito)
             print(f"📊 Datos extraídos: {datos_reserva}")
             
             # Cargar en SACH
