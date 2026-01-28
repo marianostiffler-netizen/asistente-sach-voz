@@ -33,10 +33,22 @@ class RobotSACH:
     def iniciar_navegador(self):
         """Inicia el navegador Playwright - con storage state si existe"""
         try:
+            print("🌐 Iniciando Playwright...")
+            sys.stdout.flush()
             self.playwright = sync_playwright().start()
+            print("✅ Playwright iniciado correctamente")
+            sys.stdout.flush()
+            
             # En Railway usar headless=True
             headless_mode = os.getenv('RAILWAY_ENVIRONMENT') is not None
+            print(f"🔧 Modo headless: {headless_mode}")
+            sys.stdout.flush()
+            
+            print("🚀 Instalando Chromium (si es necesario)...")
+            sys.stdout.flush()
             self.browser = self.playwright.chromium.launch(headless=headless_mode)
+            print("✅ Navegador instalado correctamente")
+            sys.stdout.flush()
             
             # Verificar si existe el archivo de sesión
             if os.path.exists("auth.json"):
