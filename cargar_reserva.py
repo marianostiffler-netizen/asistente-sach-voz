@@ -576,10 +576,12 @@ class RobotSACH:
                 if guardar_btn.count() > 0:
                     guardar_btn.click()
                     print("✅ Botón Guardar clickeado (ID)")
+                    print("✅ Formulario enviado correctamente")
                 else:
                     # Backup con role
                     self.page.get_by_role("button", name="Guardar Cliente").click()
                     print("✅ Botón Guardar clickeado (role)")
+                    print("✅ Formulario enviado correctamente")
                 
                 # Espera mínima y verificación
                 self.page.wait_for_timeout(500)
