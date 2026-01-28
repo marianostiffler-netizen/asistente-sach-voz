@@ -34,7 +34,7 @@ class RobotSACH:
         self.page = None
     
     def iniciar_navegador(self):
-        """Inicia el navegador Playwright - con persistent context para evitar captcha"""
+        """Inicia el navegador Playwright - versión simplificada sin storage_state"""
         try:
             print("🌐 Iniciando Playwright...")
             sys.stdout.flush()
@@ -42,48 +42,27 @@ class RobotSACH:
             print("✅ Playwright iniciado correctamente")
             sys.stdout.flush()
             
-            # En Railway usar headless=True
-            headless_mode = os.getenv('RAILWAY_ENVIRONMENT') is not None
-            print(f"🔧 Modo headless: {headless_mode}")
+            print("🚀 Instalando Chromium (si es necesario)...")
             sys.stdout.flush()
             
-            print("🚀 Instalando Chromium (si es necesario)...")
+            # Timeout de 30 segundos para el lanzamiento
+            print("� Lanzando navegador con timeout de 30 segundos...")
             sys.stdout.flush()
             
             self.browser = self.playwright.chromium.launch(
                 headless=True,
-                args=["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"]
+                args=["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"],
+                timeout=30000  # 30 segundos timeout
             )
             
-            # Crear contexto persistente que guarda cookies/sesión
-            context_path = "sach_session"
-            if not os.path.exists(context_path):
-                os.makedirs(context_path)
-                print(f"📁 Creado directorio: {context_path}")
-                sys.stdout.flush()
-            
-            # Intentar cargar sesión persistente con try/except
-            state_file = f"{context_path}/state.json"
-            try:
-                if os.path.exists(state_file):
-                    print("� Cargando sesión persistente...")
-                    sys.stdout.flush()
-                    self.context = self.browser.new_context(
-                        storage_state=state_file,
-                        user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-                    )
-                    print("✅ Sesión persistente cargada")
-                    sys.stdout.flush()
-                else:
-                    raise FileNotFoundError("Archivo de sesión no existe")
-            except (FileNotFoundError, Exception) as e:
-                print(f"🆕 Iniciando contexto nuevo: {e}")
-                sys.stdout.flush()
-                self.context = self.browser.new_context(
-                    user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-                )
-                print("✅ Contexto nuevo creado")
-                sys.stdout.flush()
+            # Contexto limpio sin storage_state
+            print("🆕 Creando contexto de navegador limpio...")
+            sys.stdout.flush()
+            self.context = self.browser.new_context(
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+            )
+            print("✅ Contexto limpio creado")
+            sys.stdout.flush()
             
             print("✅ Navegador instalado correctamente")
             sys.stdout.flush()
@@ -103,22 +82,20 @@ class RobotSACH:
             return False
     
     def cerrar_navegador(self):
-        """Cierra el navegador y guarda la sesión persistente"""
+        """Cierra el navegador - versión simplificada sin storage_state"""
         try:
-            # Guardar estado de la sesión para persistencia
-            if self.context:
-                print("💾 Guardando estado de sesión para persistencia...")
-                sys.stdout.flush()
-                # Asegurar que el directorio exista
-                os.makedirs("sach_session", exist_ok=True)
-                self.context.storage_state(path="sach_session/state.json")
-                print("✅ Sesión guardada correctamente")
-                sys.stdout.flush()
+            print("� Cerrando navegador...")
+            sys.stdout.flush()
             
+            if self.context:
+                self.context.close()
             if self.browser:
                 self.browser.close()
             if self.playwright:
                 self.playwright.stop()
+                
+            print("✅ Navegador cerrado correctamente")
+            sys.stdout.flush()
         except Exception as e:
             print(f"Error cerrando navegador: {e}")
             sys.stdout.flush()

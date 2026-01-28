@@ -79,6 +79,9 @@ def webhook():
         # Procesar mensajes entrantes
         data = request.get_json()
         
+        print("🎙️ Audio recibido - Webhook POST detectado")
+        sys.stdout.flush()
+        
         try:
             # Verificar si es un mensaje de WhatsApp
             if 'object' in data and data['object'] == 'whatsapp_business_account':
