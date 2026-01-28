@@ -58,7 +58,6 @@ class RobotSACH:
             )
             
             # Crear directorio para sesión persistente si no existe
-            import os
             if not os.path.exists(context_path):
                 os.makedirs(context_path)
                 print(f"📁 Creado directorio: {context_path}")
@@ -582,6 +581,14 @@ class RobotSACH:
                     self.page.get_by_role("button", name="Guardar Cliente").click()
                     print("✅ Botón Guardar clickeado (role)")
                     print("✅ Formulario enviado correctamente")
+                
+                # Backup adicional: selector de submit
+                if guardar_btn.count() == 0:
+                    submit_btn = self.page.locator('input[type="submit"]')
+                    if submit_btn.count() > 0:
+                        submit_btn.click()
+                        print("✅ Botón Submit clickeado")
+                        print("✅ Formulario enviado correctamente")
                 
                 # Espera mínima y verificación
                 self.page.wait_for_timeout(500)
