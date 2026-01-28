@@ -616,9 +616,98 @@ class RobotSACH:
                         continue
                 
                 if not form_found:
-                    print("❌ FALLO: No se encontró el formulario de Nuevo Cliente")
+                    print("❌ FALLO: No se encontró el formulario de Nuevo Cliente - Intentando navegación por menú")
                     sys.stdout.flush()
-                    return False
+                    
+                    # Captura de pantalla para debugging
+                    self.page.screenshot(path='error_navegacion.png')
+                    print("📸 Captura de pantalla guardada como 'error_navegacion.png'")
+                    sys.stdout.flush()
+                    
+                    # Intentar navegación por menú
+                    print("🔍 Paso 3b: Buscando menú 'Clientes'...")
+                    sys.stdout.flush()
+                    
+                    # Buscar botón/enlace 'Clientes'
+                    clientes_selectors = [
+                        'a:has-text("Clientes")',
+                        'button:has-text("Clientes")',
+                        '[href*="cliente"]',
+                        '.menu-item:has-text("Clientes")',
+                        'nav a:has-text("Clientes")'
+                    ]
+                    
+                    clientes_found = False
+                    for selector in clientes_selectors:
+                        try:
+                            elem = self.page.locator(selector)
+                            if elem.count() > 0:
+                                print(f"✅ Encontrado 'Clientes' con selector: {selector}")
+                                sys.stdout.flush()
+                                elem.first.click()
+                                self.page.wait_for_timeout(1000)
+                                clientes_found = True
+                                break
+                        except:
+                            continue
+                    
+                    if clientes_found:
+                        print("🔍 Paso 3c: Buscando botón 'Nuevo Cliente'...")
+                        sys.stdout.flush()
+                        
+                        # Buscar botón 'Nuevo Cliente' o '+'
+                        nuevo_selectors = [
+                            'button:has-text("Nuevo Cliente")',
+                            'a:has-text("Nuevo Cliente")',
+                            'button:has-text("Nuevo")',
+                            'a:has-text("Nuevo")',
+                            'button:has-text("+")',
+                            'a:has-text("+")',
+                            '.btn:has-text("Nuevo")',
+                            '[href*="nuevo"]',
+                            '.btn-primary:has-text("Cliente")'
+                        ]
+                        
+                        nuevo_found = False
+                        for selector in nuevo_selectors:
+                            try:
+                                elem = self.page.locator(selector)
+                                if elem.count() > 0:
+                                    print(f"✅ Encontrado 'Nuevo Cliente' con selector: {selector}")
+                                    sys.stdout.flush()
+                                    elem.first.click()
+                                    self.page.wait_for_timeout(2000)
+                                    nuevo_found = True
+                                    break
+                            except:
+                                continue
+                        
+                        if nuevo_found:
+                            print("🎉 Paso 3: ¡Navegación por menú exitosa!")
+                            sys.stdout.flush()
+                            # Verificar nuevamente el formulario
+                            for selector in nuevo_cliente_selectors:
+                                try:
+                                    elem = self.page.locator(selector)
+                                    if elem.count() > 0:
+                                        print(f"✅ Paso 3: Formulario encontrado después de navegación: {selector}")
+                                        sys.stdout.flush()
+                                        form_found = True
+                                        break
+                                except:
+                                    continue
+                        else:
+                            print("❌ FALLO: No se encontró el botón 'Nuevo Cliente'")
+                            sys.stdout.flush()
+                            self.page.screenshot(path='error_nuevo_cliente.png')
+                            print("📸 Captura guardada como 'error_nuevo_cliente.png'")
+                            sys.stdout.flush()
+                    else:
+                        print("❌ FALLO: No se encontró el menú 'Clientes'")
+                        sys.stdout.flush()
+                        self.page.screenshot(path='error_menu_clientes.png')
+                        print("📸 Captura guardada como 'error_menu_clientes.png'")
+                        sys.stdout.flush()
                 
                 print("🎉 Paso 3: ¡Llegamos al formulario de Nuevo Cliente!")
                 sys.stdout.flush()
