@@ -3,7 +3,7 @@ import os
 import json
 import requests
 from procesar_audio import ProcesadorAudio
-from cargar_reserva import SACHRobot
+from cargar_reserva import RobotSACH
 import tempfile
 import urllib.parse
 
@@ -82,7 +82,7 @@ def handle_audio_message(message):
             
             # Cargar en SACH
             print("🤖 Cargando en SACH...")
-            robot = SACHRobot()
+            robot = RobotSACH()
             resultado = robot.procesar_cliente(datos_reserva)
             
             if resultado:
