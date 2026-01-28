@@ -145,6 +145,8 @@ def handle_audio_message(message):
             if resultado:
                 response_text = f"✅ ¡Reserva procesada!\n\n📋 Datos:\n• Cliente: {datos_reserva.get('nombre', 'N/A')}\n• Cabaña: {datos_reserva.get('cabana', 'N/A')}\n• Entrada: {datos_reserva.get('fecha_entrada', 'N/A')}\n• Noches: {datos_reserva.get('noches', 'N/A')}\n• Precio: ${datos_reserva.get('precio', 'N/A')}\n\n🎉 Cliente guardado en SACH"
                 print("✅ Proceso SACH completado exitosamente")
+                print("✅ CLIENTE GUARDADO EN SACH")  # ← NUEVO: Log de confirmación final
+                sys.stdout.flush()
             else:
                 response_text = "❌ Error al procesar la reserva. Por favor, intenta nuevamente."
                 print("❌ Proceso SACH falló - resultado False")

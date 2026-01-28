@@ -722,6 +722,7 @@ class RobotSACH:
                 sys.stdout.flush()
                 if self.guardar_cliente():
                     print("🎉 Paso 6: ¡Cliente guardado exitosamente en SACH!")
+                    print("✅ CLIENTE GUARDADO EN SACH")  # ← NUEVO: Log de confirmación
                     sys.stdout.flush()
                     return True
                 else:
