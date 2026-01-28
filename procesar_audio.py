@@ -16,11 +16,12 @@ load_dotenv()
 
 class ProcesadorAudio:
     def __init__(self):
-        self.api_key = os.getenv('GROQ_API_KEY')
-        if not self.api_key:
+        self.clave_api = os.getenv('GROQ_API_KEY')
+        if not self.clave_api:
             raise ValueError("GROQ_API_KEY no encontrada en el archivo .env")
         
-        self.client = Groq(api_key=self.api_key)
+        # Forzar inicialización de Groq SIN argumentos extra
+        self.client = Groq(api_key=self.clave_api)
         
     def transcribir_audio(self, archivo_audio):
         """
