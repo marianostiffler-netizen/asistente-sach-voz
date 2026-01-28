@@ -1,0 +1,10 @@
+Este es un archivo de texto de ejemplo para simular una reserva.
+
+Texto de ejemplo para probar el procesamiento:
+
+"Hola, me gustaría hacer una reserva. Mi nombre es María García, quiero la Cabaña 5 para el 15 de febrero de 2024, serían 3 noches y el precio total sería de 18.000 pesos."
+
+Instrucciones:
+1. Graba un audio con este texto o similar
+2. Guárdalo como .wav o .mp3 en esta carpeta
+3. Ejecuta: python procesar_audio.py nombre_del_archivo.wav
