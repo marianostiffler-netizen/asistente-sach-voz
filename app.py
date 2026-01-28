@@ -8,6 +8,17 @@ from cargar_reserva import RobotSACH
 import tempfile
 import urllib.parse
 
+# Instalar Playwright Chromium si no está disponible
+print("🔧 Verificando instalación de Playwright...")
+sys.stdout.flush()
+try:
+    os.system('playwright install chromium')
+    print("✅ Playwright Chromium instalado o ya existente")
+    sys.stdout.flush()
+except Exception as e:
+    print(f"⚠️ Error instalando Playwright: {e}")
+    sys.stdout.flush()
+
 app = Flask(__name__)
 
 # Configuración de WhatsApp desde variables de entorno
