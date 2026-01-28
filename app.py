@@ -182,9 +182,18 @@ def send_whatsapp_message(to_number, message_text):
         'Content-Type': 'application/json'
     }
     
+    # Formatear número para WhatsApp (quitar 9 de Argentina si existe)
+    formatted_number = to_number
+    if formatted_number.startswith('549'):
+        formatted_number = '54' + formatted_number[3:]  # Reemplazar 549 por 54
+    elif formatted_number.startswith('+549'):
+        formatted_number = '+54' + formatted_number[4:]  # Reemplazar +549 por +54
+    
+    print(f"📱 Enviando mensaje a: {formatted_number}")
+    
     data = {
         "messaging_product": "whatsapp",
-        "to": to_number,
+        "to": formatted_number,
         "type": "text",
         "text": {
             "body": message_text

@@ -32,22 +32,34 @@ class RobotSACH:
     
     def iniciar_navegador(self):
         """Inicia el navegador Playwright - con storage state si existe"""
-        self.playwright = sync_playwright().start()
-        self.browser = self.playwright.chromium.launch(headless=False)
-        
-        # Verificar si existe el archivo de sesión
-        import os
-        if os.path.exists("auth.json"):
-            print("🔑 Usando sesión guardada (auth.json)")
-            self.context = self.browser.new_context(storage_state="auth.json")
-        else:
-            print("🔑 No hay sesión guardada, usando contexto nuevo")
-            self.context = self.browser.new_context()
-        
-        self.page = self.context.new_page()
-        
-        # Configurar tamaño de ventana
-        self.page.set_viewport_size({"width": 1366, "height": 768})
+        try:
+            self.playwright = sync_playwright().start()
+            # En Railway usar headless=True
+            headless_mode = os.getenv('RAILWAY_ENVIRONMENT') is not None
+            self.browser = self.playwright.chromium.launch(headless=headless_mode)
+            
+            # Verificar si existe el archivo de sesión
+            import os
+            if os.path.exists("auth.json"):
+                print("🔑 Usando sesión guardada (auth.json)")
+                self.context = self.browser.new_context(storage_state="auth.json")
+            else:
+                print("🔑 No hay sesión guardada, usando contexto nuevo")
+                self.context = self.browser.new_context()
+            
+            self.page = self.context.new_page()
+            
+            # Configurar tamaño de ventana
+            self.page.set_viewport_size({"width": 1280, "height": 720})
+            
+            print("✅ Navegador iniciado correctamente")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error iniciando navegador: {e}")
+            self.browser = None
+            self.page = None
+            return False
     
     def cerrar_navegador(self):
         """Cierra el navegador"""
@@ -538,7 +550,10 @@ class RobotSACH:
     def procesar_cliente(self, datos_cliente):
         """Proceso completo de carga de cliente - con storage state"""
         try:
-            self.iniciar_navegador()
+            # Iniciar navegador con control de errores
+            if not self.iniciar_navegador():
+                print("❌ No se pudo iniciar el navegador")
+                return False
             
             # Verificar si tenemos sesión guardada
             import os
