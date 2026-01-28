@@ -20,22 +20,27 @@ try:
     try:
         print("Intentando iniciar Chromium con modo sandbox desactivado...")
         sys.stdout.flush()
-        from playwright.sync_api import sync_playwright
-        playwright = sync_playwright().start()
-        browser = playwright.chromium.launch(
-            headless=True,
-            args=[
-                "--no-sandbox",
-                "--disable-setuid-sandbox",
-                "--disable-dev-shm-usage",
-                "--disable-gpu",
-                "--no-zygote"
-            ]
-        )
-        print("¡Navegador iniciado con éxito!")
-        sys.stdout.flush()
-        browser.close()
-        playwright.stop()
+        from playwright.async_api import async_playwright
+        import asyncio
+        
+        async def launch_browser():
+            playwright = await async_playwright().start()
+            
+            # Diagnóstico de ruta del navegador
+            print(f'Ruta del navegador: {playwright.chromium.executable_path}')
+            sys.stdout.flush()
+            
+            browser = await playwright.chromium.launch(
+                headless=True,
+                args=["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"]
+            )
+            print("¡Navegador iniciado con éxito!")
+            sys.stdout.flush()
+            await browser.close()
+            await playwright.stop()
+        
+        asyncio.run(launch_browser())
+        
     except Exception as e:
         print(f"CRITICAL ERROR iniciando navegador: {e}")
         sys.stdout.flush()
