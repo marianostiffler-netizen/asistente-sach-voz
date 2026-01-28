@@ -182,14 +182,25 @@ def send_whatsapp_message(to_number, message_text):
         'Content-Type': 'application/json'
     }
     
-    # Formatear número para WhatsApp (quitar 9 de Argentina si existe)
+    # Formatear número para WhatsApp - eliminar prefijos para usar solo el número base
     formatted_number = to_number
-    if formatted_number.startswith('549'):
-        formatted_number = '54' + formatted_number[3:]  # Reemplazar 549 por 54
-    elif formatted_number.startswith('+549'):
-        formatted_number = '+54' + formatted_number[4:]  # Reemplazar +549 por +54
     
-    print(f"📱 Enviando mensaje a: {formatted_number}")
+    # Eliminar todos los prefijos para dejar solo el número de 10 dígitos
+    if formatted_number.startswith('+549'):
+        formatted_number = formatted_number[4:]  # Quitar +549
+    elif formatted_number.startswith('549'):
+        formatted_number = formatted_number[3:]  # Quitar 549
+    elif formatted_number.startswith('+54'):
+        formatted_number = formatted_number[3:]  # Quitar +54
+    elif formatted_number.startswith('54'):
+        formatted_number = formatted_number[2:]  # Quitar 54
+    
+    # Asegurarse de que tenga 10 dígitos (formato argentino sin prefijo)
+    if len(formatted_number) == 10 and formatted_number.startswith('9'):
+        formatted_number = formatted_number[1:]  # Quitar el 9 inicial
+    
+    print(f"📱 Número original: {to_number}")
+    print(f"📱 Número formateado: {formatted_number}")
     
     data = {
         "messaging_product": "whatsapp",
