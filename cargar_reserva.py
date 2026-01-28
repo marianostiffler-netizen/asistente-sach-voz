@@ -5,8 +5,8 @@ Usa Playwright para automatizar la carga de reservas en el sistema SACH
 """
 
 import os
-import json
 import sys
+import json
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from playwright.sync_api import sync_playwright
@@ -549,19 +549,30 @@ class RobotSACH:
     def procesar_cliente(self, datos_cliente):
         """Proceso completo de carga de cliente - con storage state"""
         try:
+            print("🚀 Iniciando proceso completo de cliente en SACH...")
+            sys.stdout.flush()
+            
             # Iniciar navegador con control de errores
+            print("📱 Paso 1: Iniciando navegador...")
+            sys.stdout.flush()
             if not self.iniciar_navegador():
-                print("❌ No se pudo iniciar el navegador")
+                print("❌ FALLO: No se pudo iniciar el navegador")
+                sys.stdout.flush()
                 return False
+            print("✅ Paso 1: Navegador iniciado correctamente")
+            sys.stdout.flush()
             
             # Verificar si tenemos sesión guardada
             import os
             if os.path.exists("auth.json"):
-                print("🚀 Usando sesión guardada, yendo directo a Nuevo Cliente...")
+                print("🚀 Paso 2: Usando sesión guardada, yendo directo a Nuevo Cliente...")
+                sys.stdout.flush()
                 self.page.goto("https://sach.com.ar/cliente/nuevo")
                 self.page.wait_for_timeout(2000)
                 
                 # Verificar si estamos en el formulario
+                print("🔍 Paso 3: Verificando formulario de Nuevo Cliente...")
+                sys.stdout.flush()
                 nuevo_cliente_selectors = [
                     'input[name*="documento"]',
                     'input[name*="nombre"]',
@@ -577,69 +588,83 @@ class RobotSACH:
                     try:
                         elem = self.page.locator(selector)
                         if elem.count() > 0:
-                            print(f"✅ Formulario de Nuevo Cliente encontrado: {selector}")
+                            print(f"✅ Paso 3: Formulario encontrado con selector: {selector}")
+                            sys.stdout.flush()
                             form_found = True
                             break
                     except:
                         continue
                 
-                if form_found:
-                    print("🎉 ¡Llegamos al formulario de Nuevo Cliente usando sesión guardada!")
-                    print("🔍 Rellenando formulario con datos de Carlos Ernesto Segovia...")
+                if not form_found:
+                    print("❌ FALLO: No se encontró el formulario de Nuevo Cliente")
+                    sys.stdout.flush()
+                    return False
+                
+                print("🎉 Paso 3: ¡Llegamos al formulario de Nuevo Cliente!")
+                sys.stdout.flush()
+                print("🔍 Paso 4: Rellenando formulario...")
+                sys.stdout.flush()
+                
+                # Rellenar formulario con los datos
+                if self.llenar_formulario_cliente(datos_cliente):
+                    print("✅ Paso 4: Formulario completado exitosamente")
+                    sys.stdout.flush()
                     
-                    # Rellenar formulario con los datos
-                    if self.llenar_formulario_cliente(datos_cliente):
-                        print("✅ Formulario completado exitosamente")
-                        
-                        # Guardar el cliente
-                        if self.guardar_cliente():
-                            print("🎉 ¡Cliente guardado exitosamente en SACH!")
-                            print("🔍 Manteniendo navegador abierto 30 segundos para revisión...")
-                            self.page.wait_for_timeout(30000)  # Mantener 30 segundos para revisión
-                            return True
-                        else:
-                            print("❌ Error al guardar cliente")
-                            self.page.wait_for_timeout(30000)  # Mantener para revisión
-                            return False
+                    # Guardar el cliente
+                    print("🔍 Paso 5: Guardando cliente...")
+                    sys.stdout.flush()
+                    if self.guardar_cliente():
+                        print("🎉 Paso 5: ¡Cliente guardado exitosamente en SACH!")
+                        sys.stdout.flush()
+                        print("🔍 Manteniendo navegador abierto 30 segundos para revisión...")
+                        self.page.wait_for_timeout(30000)  # Mantener 30 segundos para revisión
+                        return True
+                    else:
+                        print("❌ FALLO: No se pudo guardar el cliente")
+                        sys.stdout.flush()
+                        return False
                 else:
-                    print("❌ No se encontró el formulario de Nuevo Cliente")
-                    self.page.wait_for_timeout(30000)  # Mantener para revisión
+                    print("❌ FALLO: No se pudo completar el formulario")
+                    sys.stdout.flush()
                     return False
             else:
                 # Si no hay sesión guardada, hacer login normal
-                print("🔑 No hay sesión guardada, haciendo login normal...")
+                print("🔑 Paso 2: No hay sesión guardada, haciendo login normal...")
+                sys.stdout.flush()
                 login_result = self.hacer_login()
                 
                 if login_result == "FORM_READY":
-                    # El login fue exitoso y estamos en el formulario de Nuevo Cliente
-                    print("🔍 Rellenando formulario con datos de Carlos Ernesto Segovia...")
+                    print("🎉 Paso 2: Login exitoso, estamos en el formulario")
+                    sys.stdout.flush()
+                    print("🔍 Paso 4: Rellenando formulario...")
+                    sys.stdout.flush()
                     
                     # Rellenar formulario con los datos
                     if self.llenar_formulario_cliente(datos_cliente):
-                        print("✅ Formulario completado exitosamente")
+                        print("✅ Paso 4: Formulario completado exitosamente")
+                        sys.stdout.flush()
                         
                         # Guardar el cliente
+                        print("🔍 Paso 5: Guardando cliente...")
+                        sys.stdout.flush()
                         if self.guardar_cliente():
-                            print("🎉 ¡Cliente guardado exitosamente en SACH!")
-                            print("🔍 Manteniendo navegador abierto 30 segundos para revisión...")
-                            self.page.wait_for_timeout(30000)  # Mantener 30 segundos para revisión
+                            print("🎉 Paso 5: ¡Cliente guardado exitosamente en SACH!")
+                            sys.stdout.flush()
                             return True
                         else:
-                            print("❌ Error al guardar cliente")
-                            self.page.wait_for_timeout(30000)  # Mantener para revisión
+                            print("❌ FALLO: No se pudo guardar el cliente")
+                            sys.stdout.flush()
                             return False
                 elif not login_result:
-                    print("❌ Login falló, pero mantengo el navegador abierto para que revises")
-                    print("🔍 Manteniendo navegador abierto 60 segundos para revisión...")
-                    self.page.wait_for_timeout(60000)  # Esperar 60 segundos
+                    print("❌ FALLO: Login falló")
+                    sys.stdout.flush()
                     return False
             
             return False
                 
         except Exception as e:
-            print(f"Error en proceso: {e}")
-            print("🔍 Manteniendo navegador abierto 60 segundos para revisión del error")
-            self.page.wait_for_timeout(60000)  # Esperar 60 segundos
+            print(f"❌ FALLO CRÍTICO: {e}")
+            sys.stdout.flush()
             return False
         finally:
             self.cerrar_navegador()

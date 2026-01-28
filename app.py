@@ -1,5 +1,6 @@
 from flask import Flask, request, Response
 import os
+import sys
 import json
 import requests
 from procesar_audio import ProcesadorAudio
@@ -77,23 +78,32 @@ def handle_audio_message(message):
         try:
             # Procesar audio con Groq
             print("🎙️ Procesando audio...")
+            sys.stdout.flush()
             texto_transcrito = procesador_audio.transcribir_audio(temp_audio_path)
             print(f"📝 Texto transcrito: {texto_transcrito}")
+            sys.stdout.flush()
             
             # Extraer datos de la reserva
             print("🔍 Extrayendo datos...")
+            sys.stdout.flush()
             datos_reserva = procesador_audio.extraer_datos_reserva(texto_transcrito)
             print(f"📊 Datos extraídos: {datos_reserva}")
+            sys.stdout.flush()
             
             # Cargar en SACH
             print("🤖 Cargando en SACH...")
+            sys.stdout.flush()
             robot = RobotSACH()
             resultado = robot.procesar_cliente(datos_reserva)
+            sys.stdout.flush()
             
             if resultado:
                 response_text = f"✅ ¡Reserva procesada!\n\n📋 Datos:\n• Cliente: {datos_reserva.get('nombre', 'N/A')}\n• Cabaña: {datos_reserva.get('cabana', 'N/A')}\n• Entrada: {datos_reserva.get('fecha_entrada', 'N/A')}\n• Noches: {datos_reserva.get('noches', 'N/A')}\n• Precio: ${datos_reserva.get('precio', 'N/A')}\n\n🎉 Cliente guardado en SACH"
+                print("✅ Proceso SACH completado exitosamente")
             else:
                 response_text = "❌ Error al procesar la reserva. Por favor, intenta nuevamente."
+                print("❌ Proceso SACH falló - resultado False")
+            sys.stdout.flush()
             
             # Enviar respuesta a WhatsApp
             send_whatsapp_message(from_number, response_text)
