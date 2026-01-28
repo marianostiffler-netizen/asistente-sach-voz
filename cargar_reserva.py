@@ -45,14 +45,14 @@ class RobotSACH:
             print("🚀 Instalando Chromium (si es necesario)...")
             sys.stdout.flush()
             
-            # Timeout de 30 segundos para el lanzamiento
-            print("� Lanzando navegador con timeout de 30 segundos...")
+            # Timeout de 20 segundos para el lanzamiento
+            print("🔧 Lanzando navegador con timeout de 20 segundos...")
             sys.stdout.flush()
             
             self.browser = self.playwright.chromium.launch(
                 headless=True,
                 args=["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"],
-                timeout=30000  # 30 segundos timeout
+                timeout=20000  # 20 segundos timeout
             )
             
             # Contexto limpio sin storage_state
@@ -103,19 +103,26 @@ class RobotSACH:
     def hacer_login(self):
         """Realiza el login en SACH con verificación y humanización"""
         try:
-            print(f"Navegando a {self.sach_url}")
+            print("🔐 INICIANDO PROCESO DE LOGIN EN SACH")
+            sys.stdout.flush()
+            
+            print(f"🌐 NAVEGANDO A: {self.sach_url}")
             sys.stdout.flush()
             self.page.goto(self.sach_url)
             
             # Esperar mínimo para que cargue
+            print("⏳ ESPERANDO A QUE CARGUE LA PÁGINA...")
+            sys.stdout.flush()
             self.page.wait_for_timeout(2000)
             
             # Imprimir información de la página actual
-            print(f"URL actual: {self.page.url}")
-            print(f"Título de la página: {self.page.title()}")
+            print(f"📍 URL ACTUAL: {self.page.url}")
+            print(f"📄 TÍTULO: {self.page.title()}")
             sys.stdout.flush()
             
             # VERIFICACIÓN: ¿Ya estamos logueados?
+            print("🔍 VERIFICANDO SI YA ESTAMOS LOGUEADOS...")
+            sys.stdout.flush()
             dashboard_indicators = [
                 'Dashboard',
                 'Panel',
@@ -134,11 +141,11 @@ class RobotSACH:
             is_logged_in = any(indicator in page_content for indicator in dashboard_indicators)
             
             if is_logged_in:
-                print("✅ Ya estamos logueados en el dashboard")
+                print("✅ LOGIN EXITOSO - YA ESTAMOS EN EL DASHBOARD")
                 sys.stdout.flush()
                 return "FORM_READY"
             
-            print("🔐 No estamos logueados, procediendo con login...")
+            print("🔐 NO ESTAMOS LOGUEADOS - PROCEDIENDO CON LOGIN...")
             sys.stdout.flush()
             
             # Buscar campos de login con más selectores específicos
@@ -559,25 +566,37 @@ class RobotSACH:
             
             # Clic instantáneo sin verificaciones extras
             try:
+                print("🔍 BUSCANDO BOTÓN GUARDAR...")
+                sys.stdout.flush()
+                
                 # Intentar con ID específico primero
                 guardar_btn = self.page.locator('#ce_hue_btn_guardar')
                 if guardar_btn.count() > 0:
+                    print("✅ BOTÓN GUARDAR ENCONTRADO POR ID")
+                    sys.stdout.flush()
                     guardar_btn.click()
-                    print("✅ Botón Guardar clickeado (ID)")
-                    print("✅ Formulario enviado correctamente")
+                    print("✅ BOTÓN GUARDAR CLICKEADO (ID)")
+                    print("✅ FORMULARIO ENVIADO CORRECTAMENTE")
+                    sys.stdout.flush()
                 else:
-                    # Backup con role
-                    self.page.get_by_role("button", name="Guardar Cliente").click()
-                    print("✅ Botón Guardar clickeado (role)")
-                    print("✅ Formulario enviado correctamente")
+                    # Backup con role - MEJORADO
+                    print("🔄 INTENTANDO CON SELECTOR ROLE...")
+                    sys.stdout.flush()
+                    self.page.get_by_role("button", name="Guardar").click()
+                    print("✅ BOTÓN GUARDAR CLICKEADO (ROLE)")
+                    print("✅ FORMULARIO ENVIADO CORRECTAMENTE")
+                    sys.stdout.flush()
                 
                 # Backup adicional: selector de submit
                 if guardar_btn.count() == 0:
+                    print("🔄 INTENTANDO CON SELECTOR SUBMIT...")
+                    sys.stdout.flush()
                     submit_btn = self.page.locator('input[type="submit"]')
                     if submit_btn.count() > 0:
                         submit_btn.click()
-                        print("✅ Botón Submit clickeado")
-                        print("✅ Formulario enviado correctamente")
+                        print("✅ BOTÓN SUBMIT CLICKEADO")
+                        print("✅ FORMULARIO ENVIADO CORRECTAMENTE")
+                        sys.stdout.flush()
                 
                 # Espera mínima y verificación
                 self.page.wait_for_timeout(500)

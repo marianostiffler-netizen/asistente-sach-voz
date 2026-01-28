@@ -104,39 +104,51 @@ def webhook():
 def handle_audio_message(message):
     """Procesar mensaje de audio de WhatsApp"""
     try:
+        print("🎵 INICIANDO PROCESAMIENTO DE AUDIO")
+        sys.stdout.flush()
+        
         # Obtener información del audio
         audio_id = message['audio']['id']
         from_number = message['from']
         
-        print(f"🎵 Audio recibido de: {from_number}")
         print(f"📋 Audio ID: {audio_id}")
+        print(f"� De: {from_number}")
+        sys.stdout.flush()
         
         # Descargar audio desde WhatsApp
+        print("📥 DESCARGANDO AUDIO DESDE WHATSAPP...")
+        sys.stdout.flush()
         audio_url = get_media_url(audio_id)
         audio_data = download_audio(audio_url)
+        print("✅ Audio descargado")
+        sys.stdout.flush()
         
         # Guardar audio temporalmente
+        print("💾 GUARDANDO AUDIO TEMPORALMENTE...")
+        sys.stdout.flush()
         with tempfile.NamedTemporaryFile(suffix='.m4a', delete=False) as temp_file:
             temp_file.write(audio_data)
             temp_audio_path = temp_file.name
+        print(f"✅ Audio guardado en: {temp_audio_path}")
+        sys.stdout.flush()
         
         try:
             # Procesar audio con Groq
-            print("🎙️ Procesando audio...")
+            print("🎙️ TRANSCRIBIENDO AUDIO CON GROQ...")
             sys.stdout.flush()
             texto_transcrito = procesador_audio.transcribir_audio(temp_audio_path)
-            print(f"📝 Texto transcrito: {texto_transcrito}")
+            print(f"📝 TEXTO TRANSCRITO: {texto_transcrito}")
             sys.stdout.flush()
             
             # Extraer datos de la reserva
-            print("🔍 Extrayendo datos...")
+            print("🔍 EXTRAYENDO DATOS DE LA RESERVA...")
             sys.stdout.flush()
             datos_reserva = procesador_audio.extraer_datos_reserva(texto_transcrito)
-            print(f"📊 Datos extraídos: {datos_reserva}")
+            print(f"📊 DATOS EXTRAÍDOS: {datos_reserva}")
             sys.stdout.flush()
             
             # Cargar en SACH
-            print("🤖 Cargando en SACH...")
+            print("🤖 INICIANDO PROCESO SACH...")
             sys.stdout.flush()
             robot = RobotSACH()
             resultado = robot.procesar_cliente(datos_reserva)
@@ -144,25 +156,43 @@ def handle_audio_message(message):
             
             if resultado:
                 response_text = f"✅ ¡Reserva procesada!\n\n📋 Datos:\n• Cliente: {datos_reserva.get('nombre', 'N/A')}\n• Cabaña: {datos_reserva.get('cabana', 'N/A')}\n• Entrada: {datos_reserva.get('fecha_entrada', 'N/A')}\n• Noches: {datos_reserva.get('noches', 'N/A')}\n• Precio: ${datos_reserva.get('precio', 'N/A')}\n\n🎉 Cliente guardado en SACH"
-                print("✅ Proceso SACH completado exitosamente")
-                print("✅ CLIENTE GUARDADO EN SACH")  # ← NUEVO: Log de confirmación final
+                print("✅ PROCESO SACH COMPLETADO EXITOSAMENTE")
+                print("✅ CLIENTE GUARDADO EN SACH")
                 sys.stdout.flush()
             else:
                 response_text = "❌ Error al procesar la reserva. Por favor, intenta nuevamente."
-                print("❌ Proceso SACH falló - resultado False")
+                print("❌ PROCESO SACH FALLÓ - RESULTADO FALSE")
             sys.stdout.flush()
             
             # Enviar respuesta a WhatsApp
+            print("📱 ENVIANDO RESPUESTA A WHATSAPP...")
+            sys.stdout.flush()
             send_whatsapp_message(from_number, response_text)
+            print("✅ RESPUESTA ENVIADA")
+            sys.stdout.flush()
             
         finally:
             # Limpiar archivo temporal
+            print("🗑️ LIMPIANDO ARCHIVO TEMPORAL...")
+            sys.stdout.flush()
             os.unlink(temp_audio_path)
+            print("✅ ARCHIVO TEMPORAL ELIMINADO")
+            sys.stdout.flush()
             
     except Exception as e:
-        print(f"Error processing audio message: {e}")
-        error_text = "❌ Error al procesar el audio. Por favor, intenta nuevamente."
-        send_whatsapp_message(message['from'], error_text)
+        print(f"❌ ERROR EN PROCESAMIENTO DE AUDIO: {e}")
+        print(f"❌ TIPO DE ERROR: {type(e).__name__}")
+        import traceback
+        print(f"❌ TRACEBACK COMPLETO: {traceback.format_exc()}")
+        sys.stdout.flush()
+        
+        # Enviar mensaje de error a WhatsApp
+        try:
+            from_number = message['from']
+            error_text = f"❌ Error procesando audio: {str(e)[:100]}"
+            send_whatsapp_message(from_number, error_text)
+        except:
+            pass
 
 def handle_text_message(message):
     """Procesar mensaje de texto de WhatsApp"""
