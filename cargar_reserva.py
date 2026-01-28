@@ -639,7 +639,7 @@ class RobotSACH:
             return False
     
     def procesar_cliente(self, datos_cliente):
-        """Proceso completo de carga de cliente - con storage state"""
+        """Proceso completo de carga de cliente - flujo optimizado"""
         try:
             print("🚀 Iniciando proceso completo de cliente en SACH...")
             sys.stdout.flush()
@@ -654,194 +654,86 @@ class RobotSACH:
             print("✅ Paso 1: Navegador iniciado correctamente")
             sys.stdout.flush()
             
-            # Verificar si tenemos sesión guardada
-            import os
-            if os.path.exists("auth.json"):
-                print("🚀 Paso 2: Usando sesión guardada, yendo directo a Nuevo Cliente...")
+            # LOGIN: Primero iniciar sesión
+            print("🔐 Paso 2: Iniciando sesión en SACH...")
+            sys.stdout.flush()
+            login_result = self.hacer_login()
+            
+            if login_result == "FORM_READY":
+                print("✅ Paso 2: Login exitoso, ya estamos en el sistema")
                 sys.stdout.flush()
-                self.page.goto("https://sach.com.ar/cliente/nuevo")
-                self.page.wait_for_timeout(2000)
-                
-                # Verificar si estamos en el formulario
-                print("🔍 Paso 3: Verificando formulario de Nuevo Cliente...")
+            elif not login_result:
+                print("❌ FALLO: Login falló")
                 sys.stdout.flush()
-                nuevo_cliente_selectors = [
-                    'input[name*="documento"]',
-                    'input[name*="nombre"]',
-                    'input[name*="apellido"]',
-                    'form:has-text("Nuevo Cliente")',
-                    'h1:has-text("Nuevo Cliente")',
-                    'h2:has-text("Nuevo Cliente")',
-                    '.form-cliente'
-                ]
-                
-                form_found = False
-                for selector in nuevo_cliente_selectors:
-                    try:
-                        elem = self.page.locator(selector)
-                        if elem.count() > 0:
-                            print(f"✅ Paso 3: Formulario encontrado con selector: {selector}")
-                            sys.stdout.flush()
-                            form_found = True
-                            break
-                    except:
-                        continue
-                
-                if not form_found:
-                    print("❌ FALLO: No se encontró el formulario de Nuevo Cliente - Intentando navegación por menú")
-                    sys.stdout.flush()
-                    
-                    # Captura de pantalla para debugging
-                    self.page.screenshot(path='error_navegacion.png')
-                    print("📸 Captura de pantalla guardada como 'error_navegacion.png'")
-                    sys.stdout.flush()
-                    
-                    # Intentar navegación por menú
-                    print("🔍 Paso 3b: Buscando menú 'Clientes'...")
-                    sys.stdout.flush()
-                    
-                    # Buscar botón/enlace 'Clientes'
-                    clientes_selectors = [
-                        'a:has-text("Clientes")',
-                        'button:has-text("Clientes")',
-                        '[href*="cliente"]',
-                        '.menu-item:has-text("Clientes")',
-                        'nav a:has-text("Clientes")'
-                    ]
-                    
-                    clientes_found = False
-                    for selector in clientes_selectors:
-                        try:
-                            elem = self.page.locator(selector)
-                            if elem.count() > 0:
-                                print(f"✅ Encontrado 'Clientes' con selector: {selector}")
-                                sys.stdout.flush()
-                                elem.first.click()
-                                self.page.wait_for_timeout(1000)
-                                clientes_found = True
-                                break
-                        except:
-                            continue
-                    
-                    if clientes_found:
-                        print("🔍 Paso 3c: Buscando botón 'Nuevo Cliente'...")
-                        sys.stdout.flush()
-                        
-                        # Buscar botón 'Nuevo Cliente' o '+'
-                        nuevo_selectors = [
-                            'button:has-text("Nuevo Cliente")',
-                            'a:has-text("Nuevo Cliente")',
-                            'button:has-text("Nuevo")',
-                            'a:has-text("Nuevo")',
-                            'button:has-text("+")',
-                            'a:has-text("+")',
-                            '.btn:has-text("Nuevo")',
-                            '[href*="nuevo"]',
-                            '.btn-primary:has-text("Cliente")'
-                        ]
-                        
-                        nuevo_found = False
-                        for selector in nuevo_selectors:
-                            try:
-                                elem = self.page.locator(selector)
-                                if elem.count() > 0:
-                                    print(f"✅ Encontrado 'Nuevo Cliente' con selector: {selector}")
-                                    sys.stdout.flush()
-                                    elem.first.click()
-                                    self.page.wait_for_timeout(2000)
-                                    nuevo_found = True
-                                    break
-                            except:
-                                continue
-                        
-                        if nuevo_found:
-                            print("🎉 Paso 3: ¡Navegación por menú exitosa!")
-                            sys.stdout.flush()
-                            # Verificar nuevamente el formulario
-                            for selector in nuevo_cliente_selectors:
-                                try:
-                                    elem = self.page.locator(selector)
-                                    if elem.count() > 0:
-                                        print(f"✅ Paso 3: Formulario encontrado después de navegación: {selector}")
-                                        sys.stdout.flush()
-                                        form_found = True
-                                        break
-                                except:
-                                    continue
-                        else:
-                            print("❌ FALLO: No se encontró el botón 'Nuevo Cliente'")
-                            sys.stdout.flush()
-                            self.page.screenshot(path='error_nuevo_cliente.png')
-                            print("📸 Captura guardada como 'error_nuevo_cliente.png'")
-                            sys.stdout.flush()
-                    else:
-                        print("❌ FALLO: No se encontró el menú 'Clientes'")
-                        sys.stdout.flush()
-                        self.page.screenshot(path='error_menu_clientes.png')
-                        print("📸 Captura guardada como 'error_menu_clientes.png'")
-                        sys.stdout.flush()
-                
-                print("🎉 Paso 3: ¡Llegamos al formulario de Nuevo Cliente!")
+                return False
+            else:
+                print("✅ Paso 2: Login completado exitosamente")
                 sys.stdout.flush()
-                print("🔍 Paso 4: Rellenando formulario...")
+            
+            # SALTO DIRECTO: Ir directamente al formulario de nuevo cliente
+            print("🚀 Paso 3: Navegando directamente al formulario de Nuevo Cliente...")
+            sys.stdout.flush()
+            self.page.goto('https://sach.com.ar/cliente/nuevo')
+            self.page.wait_for_timeout(2000)
+            
+            # ESPERA ACTIVA: Esperar a que aparezca el primer campo del formulario
+            print("⏳ Paso 4: Esperando a que cargue el formulario...")
+            sys.stdout.flush()
+            
+            form_selectors = [
+                'input[name*="nombre"]',
+                'input[name*="documento"]', 
+                'input[name*="apellido"]',
+                'input[placeholder*="nombre"]',
+                'input[placeholder*="documento"]',
+                'input[placeholder*="apellido"]',
+                'input[type="text"]'
+            ]
+            
+            form_loaded = False
+            for selector in form_selectors:
+                try:
+                    self.page.wait_for_selector(selector, timeout=5000)
+                    print(f"✅ Paso 4: Formulario cargado, encontrado campo: {selector}")
+                    sys.stdout.flush()
+                    form_loaded = True
+                    break
+                except:
+                    continue
+            
+            if not form_loaded:
+                print("❌ FALLO: El formulario no cargó después de 5 segundos")
+                sys.stdout.flush()
+                self.page.screenshot(path='error_formulario_no_carga.png')
+                print("📸 Captura guardada como 'error_formulario_no_carga.png'")
+                sys.stdout.flush()
+                return False
+            
+            # COMPLETAR: Cargar los datos del audio
+            print("🔍 Paso 5: Completando formulario con datos del audio...")
+            sys.stdout.flush()
+            print(f"📊 Datos a cargar: {datos_cliente}")
+            sys.stdout.flush()
+            
+            if self.llenar_formulario_cliente(datos_cliente):
+                print("✅ Paso 5: Formulario completado exitosamente")
                 sys.stdout.flush()
                 
-                # Rellenar formulario con los datos
-                if self.llenar_formulario_cliente(datos_cliente):
-                    print("✅ Paso 4: Formulario completado exitosamente")
+                # Guardar el cliente
+                print("🔍 Paso 6: Guardando cliente...")
+                sys.stdout.flush()
+                if self.guardar_cliente():
+                    print("🎉 Paso 6: ¡Cliente guardado exitosamente en SACH!")
                     sys.stdout.flush()
-                    
-                    # Guardar el cliente
-                    print("🔍 Paso 5: Guardando cliente...")
-                    sys.stdout.flush()
-                    if self.guardar_cliente():
-                        print("🎉 Paso 5: ¡Cliente guardado exitosamente en SACH!")
-                        sys.stdout.flush()
-                        print("🔍 Manteniendo navegador abierto 30 segundos para revisión...")
-                        self.page.wait_for_timeout(30000)  # Mantener 30 segundos para revisión
-                        return True
-                    else:
-                        print("❌ FALLO: No se pudo guardar el cliente")
-                        sys.stdout.flush()
-                        return False
+                    return True
                 else:
-                    print("❌ FALLO: No se pudo completar el formulario")
+                    print("❌ FALLO: No se pudo guardar el cliente")
                     sys.stdout.flush()
                     return False
             else:
-                # Si no hay sesión guardada, hacer login normal
-                print("🔑 Paso 2: No hay sesión guardada, haciendo login normal...")
+                print("❌ FALLO: No se pudo completar el formulario")
                 sys.stdout.flush()
-                login_result = self.hacer_login()
-                
-                if login_result == "FORM_READY":
-                    print("🎉 Paso 2: Login exitoso, estamos en el formulario")
-                    sys.stdout.flush()
-                    print("🔍 Paso 4: Rellenando formulario...")
-                    sys.stdout.flush()
-                    
-                    # Rellenar formulario con los datos
-                    if self.llenar_formulario_cliente(datos_cliente):
-                        print("✅ Paso 4: Formulario completado exitosamente")
-                        sys.stdout.flush()
-                        
-                        # Guardar el cliente
-                        print("🔍 Paso 5: Guardando cliente...")
-                        sys.stdout.flush()
-                        if self.guardar_cliente():
-                            print("🎉 Paso 5: ¡Cliente guardado exitosamente en SACH!")
-                            sys.stdout.flush()
-                            return True
-                        else:
-                            print("❌ FALLO: No se pudo guardar el cliente")
-                            sys.stdout.flush()
-                            return False
-                elif not login_result:
-                    print("❌ FALLO: Login falló")
-                    sys.stdout.flush()
-                    return False
-            
-            return False
+                return False
                 
         except Exception as e:
             print(f"❌ FALLO CRÍTICO: {e}")
@@ -864,15 +756,15 @@ def main():
         resultado = robot.procesar_cliente(datos_cliente)
         
         if resultado:
-            print("✅ Proceso completado exitosamente")
+            print("✅ Cliente procesado exitosamente")
         else:
-            print("❌ Falló el proceso")
+            print("❌ Error procesando cliente")
             
     except json.JSONDecodeError:
-        print("Error: JSON inválido")
+        print("❌ Error: JSON inválido")
         sys.exit(1)
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"❌ Error: {e}")
         sys.exit(1)
 
 if __name__ == "__main__":
