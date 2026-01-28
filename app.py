@@ -16,17 +16,30 @@ try:
     print("✅ Playwright Chromium instalado o ya existente")
     sys.stdout.flush()
     
-    # Iniciar navegador con argumentos de seguridad para Railway
-    from playwright.sync_api import sync_playwright
-    playwright = sync_playwright().start()
-    browser = playwright.chromium.launch(
-        headless=True,
-        args=['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
-    )
-    print("✅ Navegador iniciado correctamente con argumentos de seguridad")
-    sys.stdout.flush()
-    browser.close()
-    playwright.stop()
+    # INICIO BLINDADO DEL NAVEGADOR
+    try:
+        print("Intentando iniciar Chromium con modo sandbox desactivado...")
+        sys.stdout.flush()
+        from playwright.sync_api import sync_playwright
+        playwright = sync_playwright().start()
+        browser = playwright.chromium.launch(
+            headless=True,
+            args=[
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-gpu",
+                "--no-zygote"
+            ]
+        )
+        print("¡Navegador iniciado con éxito!")
+        sys.stdout.flush()
+        browser.close()
+        playwright.stop()
+    except Exception as e:
+        print(f"CRITICAL ERROR iniciando navegador: {e}")
+        sys.stdout.flush()
+        raise e
     
 except Exception as e:
     print(f"⚠️ Error instalando Playwright: {e}")
