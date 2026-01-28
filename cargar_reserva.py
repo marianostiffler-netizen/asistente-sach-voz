@@ -46,7 +46,15 @@ class RobotSACH:
             
             print("🚀 Instalando Chromium (si es necesario)...")
             sys.stdout.flush()
-            self.browser = self.playwright.chromium.launch(headless=headless_mode)
+            self.browser = self.playwright.chromium.launch(
+                headless=True,
+                args=[
+                    '--no-sandbox', 
+                    '--disable-setuid-sandbox', 
+                    '--disable-dev-shm-usage', 
+                    '--disable-gpu'
+                ]
+            )
             print("✅ Navegador instalado correctamente")
             sys.stdout.flush()
             
