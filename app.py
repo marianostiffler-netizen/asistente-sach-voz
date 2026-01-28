@@ -133,12 +133,18 @@ def handle_audio_message(message):
         sys.stdout.flush()
         
         try:
-            # Procesar audio con Groq
-            print("🎙️ TRANSCRIBIENDO AUDIO CON GROQ...")
+            # PROCESAMIENTO DE AUDIO CON CAPTURA DE ERRORES
+            print("🎙️ INTENTANDO TRANSCRIBIR CON GROQ...")
             sys.stdout.flush()
+            
             texto_transcrito = procesador_audio.transcribir_audio(temp_audio_path)
-            print(f"📝 TEXTO TRANSCRITO: {texto_transcrito}")
+            print(f"📝 TEXTO RECIBIDO DE GROQ: {texto_transcrito}")
             sys.stdout.flush()
+            
+            if not texto_transcrito or texto_transcrito.strip() == "":
+                print("❌ ERROR: La transcripción está vacía")
+                sys.stdout.flush()
+                return
             
             # Extraer datos de la reserva
             print("🔍 EXTRAYENDO DATOS DE LA RESERVA...")

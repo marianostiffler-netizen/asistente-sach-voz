@@ -45,14 +45,14 @@ class RobotSACH:
             print("🚀 Instalando Chromium (si es necesario)...")
             sys.stdout.flush()
             
-            # Timeout de 20 segundos para el lanzamiento
-            print("🔧 Lanzando navegador con timeout de 20 segundos...")
+            # Timeout de 60 segundos para el lanzamiento
+            print("🔧 Lanzando navegador con timeout de 60 segundos...")
             sys.stdout.flush()
             
             self.browser = self.playwright.chromium.launch(
                 headless=True,
                 args=["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"],
-                timeout=20000  # 20 segundos timeout
+                timeout=60000  # 60 segundos timeout
             )
             
             # Contexto limpio sin storage_state
@@ -598,6 +598,14 @@ class RobotSACH:
                         print("✅ FORMULARIO ENVIADO CORRECTAMENTE")
                         sys.stdout.flush()
                 
+                # Backup final: presionar Enter
+                print("🔄 INTENTANDO CON PRESIONAR ENTER...")
+                sys.stdout.flush()
+                self.page.keyboard.press('Enter')
+                print("✅ ENTER PRESIONADO")
+                print("✅ FORMULARIO ENVIADO CORRECTAMENTE")
+                sys.stdout.flush()
+                
                 # Espera mínima y verificación
                 self.page.wait_for_timeout(500)
                 
@@ -656,109 +664,53 @@ class RobotSACH:
             return False
     
     def procesar_cliente(self, datos_cliente):
-        """Proceso completo de carga de cliente - flujo optimizado"""
+        """Procesa un cliente completo - versión simplificada"""
         try:
-            print("🚀 Iniciando proceso completo de cliente en SACH...")
+            print("🤖 INICIANDO PROCESAMIENTO DE CLIENTE")
             sys.stdout.flush()
             
-            # Iniciar navegador con control de errores
-            print("📱 Paso 1: Iniciando navegador...")
+            # Iniciar navegador
+            print("🌐 INICIANDO NAVEGADOR...")
             sys.stdout.flush()
             if not self.iniciar_navegador():
-                print("❌ FALLO: No se pudo iniciar el navegador")
-                sys.stdout.flush()
+                print("❌ ERROR: No se pudo iniciar el navegador")
                 return False
-            print("✅ Paso 1: Navegador iniciado correctamente")
-            sys.stdout.flush()
             
-            # LOGIN: Primero iniciar sesión
-            print("🔐 Paso 2: Iniciando sesión en SACH...")
+            # Login
+            print("🔐 HACIENDO LOGIN...")
             sys.stdout.flush()
-            login_result = self.hacer_login()
-            
-            if login_result == "FORM_READY":
-                print("✅ Paso 2: Login exitoso, ya estamos en el sistema")
-                sys.stdout.flush()
-            elif not login_result:
-                print("❌ FALLO: Login falló")
-                sys.stdout.flush()
+            if not self.hacer_login():
+                print("❌ ERROR: Login falló")
                 return False
-            else:
-                print("✅ Paso 2: Login completado exitosamente")
-                sys.stdout.flush()
             
-            # SALTO DIRECTO: Ir directamente al formulario de nuevo cliente
-            print("🚀 Paso 3: Navegando directamente al formulario de Nuevo Cliente...")
+            # Ir a formulario
+            print("🚀 NAVEGANDO A FORMULARIO...")
             sys.stdout.flush()
             self.page.goto('https://sach.com.ar/cliente/nuevo')
             self.page.wait_for_timeout(2000)
             
-            # ESPERA ACTIVA: Esperar a que aparezca el primer campo del formulario
-            print("⏳ Paso 4: Esperando a que cargue el formulario...")
+            # Llenar formulario
+            print("📝 LLENANDO FORMULARIO...")
             sys.stdout.flush()
-            
-            form_selectors = [
-                'input[name*="nombre"]',
-                'input[name*="documento"]', 
-                'input[name*="apellido"]',
-                'input[placeholder*="nombre"]',
-                'input[placeholder*="documento"]',
-                'input[placeholder*="apellido"]',
-                'input[type="text"]'
-            ]
-            
-            form_loaded = False
-            for selector in form_selectors:
-                try:
-                    self.page.wait_for_selector(selector, timeout=5000)
-                    print(f"✅ Paso 4: Formulario cargado, encontrado campo: {selector}")
-                    sys.stdout.flush()
-                    form_loaded = True
-                    break
-                except:
-                    continue
-            
-            if not form_loaded:
-                print("❌ FALLO: El formulario no cargó después de 5 segundos")
-                sys.stdout.flush()
-                self.page.screenshot(path='error_formulario_no_carga.png')
-                print("📸 Captura guardada como 'error_formulario_no_carga.png'")
-                sys.stdout.flush()
+            if not self.llenar_formulario_cliente(datos_cliente):
+                print("❌ ERROR: No se pudo llenar formulario")
                 return False
             
-            # COMPLETAR: Cargar los datos del audio
-            print("🔍 Paso 5: Completando formulario con datos del audio...")
+            # Guardar
+            print("💾 GUARDANDO CLIENTE...")
             sys.stdout.flush()
-            print(f"📊 Datos a cargar: {datos_cliente}")
-            sys.stdout.flush()
-            
-            if self.llenar_formulario_cliente(datos_cliente):
-                print("✅ Paso 5: Formulario completado exitosamente")
-                sys.stdout.flush()
-                
-                # Guardar el cliente
-                print("🔍 Paso 6: Guardando cliente...")
-                sys.stdout.flush()
-                if self.guardar_cliente():
-                    print("🎉 Paso 6: ¡Cliente guardado exitosamente en SACH!")
-                    print("✅ CLIENTE GUARDADO EN SACH")  # ← NUEVO: Log de confirmación
-                    sys.stdout.flush()
-                    return True
-                else:
-                    print("❌ FALLO: No se pudo guardar el cliente")
-                    sys.stdout.flush()
-                    return False
-            else:
-                print("❌ FALLO: No se pudo completar el formulario")
-                sys.stdout.flush()
+            if not self.guardar_cliente():
+                print("❌ ERROR: No se pudo guardar")
                 return False
+            
+            print("✅ CLIENTE GUARDADO EN SACH")
+            sys.stdout.flush()
+            return True
                 
         except Exception as e:
-            print(f"❌ FALLO CRÍTICO: {e}")
+            print(f"❌ ERROR: {e}")
             sys.stdout.flush()
             return False
-        finally:
-            self.cerrar_navegador()
 
 def main():
     if len(sys.argv) != 2:
