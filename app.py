@@ -9,10 +9,15 @@ import urllib.parse
 
 app = Flask(__name__)
 
-# Configuración de WhatsApp
-WHATSAPP_VERIFY_TOKEN = "mytoken"
-WHATSAPP_PHONE_NUMBER_ID = "914504238421045"
-WHATSAPP_TOKEN = "EAAW5CS28ei8BQjzSAOZBXSWxAaXi8dvg2ZBjqHk89l41Km4kpw2sKZBlIliyR5mqRaBUxUAERLRO2LtFFIRjHlxdZBL8jNGoRFpnOUDzKdY7xZBS8MwOd3zBazAZBRYKb9acq9rYXs4VPdqiaF0zdy9x28XtK6i9aD30N3DgKrhdNfxgWwASB3bytjDS37H3istcqcavmR7GfhsNCpzUVjrh6ZCD2ZAwR7U3BnXdkPgpSnQxTJRqkhZC3xQLf6iQGMhpFHSEoezv7BmUaMQIAUwZDZD"
+# Configuración de WhatsApp desde variables de entorno
+WHATSAPP_VERIFY_TOKEN = os.getenv('WHATSAPP_VERIFY_TOKEN', 'mytoken')
+WHATSAPP_PHONE_NUMBER_ID = os.getenv('WHATSAPP_PHONE_NUMBER_ID', '914504238421045')
+WHATSAPP_TOKEN = os.getenv('WHATSAPP_TOKEN')
+
+# Log para verificar qué token se está usando
+print(f'🔑 Usando token que empieza con: {WHATSAPP_TOKEN[:10] if WHATSAPP_TOKEN else "NONE"}')
+print(f'📱 Phone ID: {WHATSAPP_PHONE_NUMBER_ID}')
+print(f'🔐 Verify Token: {WHATSAPP_VERIFY_TOKEN}')
 
 # Inicializar procesador de audio
 procesador_audio = ProcesadorAudio()
