@@ -1,1 +1,1 @@
-web: python asistente_completo.py
+web: python app.py
