@@ -39,7 +39,6 @@ class RobotSACH:
             self.browser = self.playwright.chromium.launch(headless=headless_mode)
             
             # Verificar si existe el archivo de sesión
-            import os
             if os.path.exists("auth.json"):
                 print("🔑 Usando sesión guardada (auth.json)")
                 self.context = self.browser.new_context(storage_state="auth.json")
