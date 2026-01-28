@@ -21,6 +21,9 @@ class RobotSACH:
         self.sach_user = os.getenv('SACH_USER')
         self.sach_pass = os.getenv('SACH_PASS')
         
+        # Inicializar contexto para evitar errores
+        self.context = None
+        
         print(f"DEBUG: Usuario leído del .env: '{self.sach_user}'")
         print(f"DEBUG: Contraseña leída del .env: '{self.sach_pass}'")
         
@@ -47,33 +50,40 @@ class RobotSACH:
             print("🚀 Instalando Chromium (si es necesario)...")
             sys.stdout.flush()
             
-            # Crear contexto persistente para guardar cookies y sesión
-            context_path = "sach_session"
-            print(f"📁 Usando contexto persistente en: {context_path}")
-            sys.stdout.flush()
-            
             self.browser = self.playwright.chromium.launch(
                 headless=True,
                 args=["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"]
             )
             
-            # Crear directorio para sesión persistente si no existe
+            # Crear contexto persistente que guarda cookies/sesión
+            context_path = "sach_session"
             if not os.path.exists(context_path):
                 os.makedirs(context_path)
                 print(f"📁 Creado directorio: {context_path}")
                 sys.stdout.flush()
             
-            # Verificar si ya existe una sesión guardada
+            # Intentar cargar sesión persistente con try/except
             state_file = f"{context_path}/state.json"
-            if os.path.exists(state_file):
-                print("🔑 Encontrada sesión guardada, verificando si sigue válida...")
+            try:
+                if os.path.exists(state_file):
+                    print("� Cargando sesión persistente...")
+                    sys.stdout.flush()
+                    self.context = self.browser.new_context(
+                        storage_state=state_file,
+                        user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+                    )
+                    print("✅ Sesión persistente cargada")
+                    sys.stdout.flush()
+                else:
+                    raise FileNotFoundError("Archivo de sesión no existe")
+            except (FileNotFoundError, Exception) as e:
+                print(f"🆕 Iniciando contexto nuevo: {e}")
                 sys.stdout.flush()
-            
-            # Crear contexto persistente que guarda cookies/sesión
-            self.context = self.browser.new_context(
-                storage_state=state_file,
-                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-            )
+                self.context = self.browser.new_context(
+                    user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+                )
+                print("✅ Contexto nuevo creado")
+                sys.stdout.flush()
             
             print("✅ Navegador instalado correctamente")
             sys.stdout.flush()
@@ -99,6 +109,8 @@ class RobotSACH:
             if self.context:
                 print("💾 Guardando estado de sesión para persistencia...")
                 sys.stdout.flush()
+                # Asegurar que el directorio exista
+                os.makedirs("sach_session", exist_ok=True)
                 self.context.storage_state(path="sach_session/state.json")
                 print("✅ Sesión guardada correctamente")
                 sys.stdout.flush()
