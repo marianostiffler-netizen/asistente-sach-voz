@@ -341,43 +341,48 @@ class RobotSACH:
                     self.page.wait_for_timeout(3000)  # 3 segundos para cargar
                     
                     print(f"URL después de navegar a Nuevo Cliente: {self.page.url}")
-                    
-                    # Verificar si estamos en el formulario de Nuevo Cliente
-                    nuevo_cliente_selectors = [
-                        'input[name*="documento"]',
-                        'input[name*="nombre"]',
-                        'input[name*="apellido"]',
-                        'input[id*="documento"]',
-                        'input[id*="dni"]',
+
+                    # VALIDACIÓN REAL: el formulario de Nuevo Cliente debe tener el campo DNI
+                    print("⏳ Esperando a que aparezca el campo DNI...")
+                    sys.stdout.flush()
+
+                    dni_ready_selectors = [
                         '#ce_hue_nro_documento',
-                        'form:has-text("Nuevo Cliente")',
-                        'h1:has-text("Nuevo Cliente")',
-                        'h2:has-text("Nuevo Cliente")',
-                        '.form-cliente',
-                        'form input[type="text"]',  # Cualquier form con input text
-                        'form'  # Cualquier formulario
+                        'input[name*="documento"]',
+                        'input[name*="dni"]',
+                        'input[id*="documento"]',
+                        'input[id*="dni"]'
                     ]
-                    
-                    form_found = False
-                    for selector in nuevo_cliente_selectors:
+
+                    dni_found = False
+                    for selector in dni_ready_selectors:
                         try:
-                            elem = self.page.locator(selector)
-                            count = elem.count()
-                            if count > 0:
-                                print(f"✅ Formulario de Nuevo Cliente encontrado: {selector} ({count} elementos)")
-                                form_found = True
-                                break
-                        except Exception as e:
+                            self.page.wait_for_selector(selector, timeout=8000)
+                            print(f"✅ Campo DNI encontrado: {selector}")
+                            sys.stdout.flush()
+                            dni_found = True
+                            break
+                        except Exception:
                             continue
-                    
-                    if form_found:
-                        print("🎉 ¡Llegamos al formulario de Nuevo Cliente!")
-                        return "FORM_READY"
-                    else:
-                        print("❌ No se encontró el formulario de Nuevo Cliente")
+
+                    if not dni_found:
+                        # Si aparece el formulario de login dentro de /cliente/nuevo, no estamos autorizados/logueados realmente
+                        try:
+                            if self.page.locator('#signin_username').count() > 0 or self.page.locator('input[name^="signin"]').count() > 0:
+                                print("❌ /cliente/nuevo está mostrando el formulario de login (signin_*). Sesión no válida.")
+                                sys.stdout.flush()
+                        except Exception:
+                            pass
+
+                        print("❌ No se detectó el campo DNI: el formulario de Nuevo Cliente no cargó")
                         print("📸 Guardando screenshot para debug...")
-                        self.page.screenshot(path="error_no_formulario.png")
+                        sys.stdout.flush()
+                        self.page.screenshot(path="error_no_dni_en_formulario.png")
                         return False
+
+                    print("🎉 ¡Llegamos al formulario de Nuevo Cliente!")
+                    sys.stdout.flush()
+                    return "FORM_READY"
             else:
                 print("No se encontraron campos de login")
                 print("Capturando screenshot para debug...")
@@ -525,6 +530,17 @@ class RobotSACH:
                 except:
                     pass
             sys.stdout.flush()
+
+            # CORTE RÁPIDO: si estamos viendo signin_*, seguimos en login, no en Nuevo Cliente
+            try:
+                if self.page.locator('#signin_username').count() > 0 or self.page.locator('input[name^="signin"]').count() > 0:
+                    print("❌ Estamos en pantalla de login (signin_*). No es el formulario de Nuevo Cliente.")
+                    print("📸 Guardando screenshot para debug...")
+                    sys.stdout.flush()
+                    self.page.screenshot(path="error_estamos_en_login.png")
+                    return False
+            except Exception:
+                pass
             
             # PRIORIDAD ABSOLUTA AL DNI - Primero y obligatorio
             print("🔍 PRIORIDAD ABSOLUTA: Llenando DNI...")
@@ -722,6 +738,16 @@ class RobotSACH:
             sys.stdout.flush()
             self.page.goto('https://sach.com.ar/cliente/nuevo')
             self.page.wait_for_timeout(2000)
+
+            # Validación: asegurarnos de estar en el formulario real (campo DNI presente)
+            try:
+                self.page.wait_for_selector('#ce_hue_nro_documento, input[name*="documento"], input[id*="dni"]', timeout=8000)
+            except Exception:
+                print("❌ No se cargó el formulario de Nuevo Cliente (campo DNI no aparece)")
+                print("📸 Guardando screenshot para debug...")
+                sys.stdout.flush()
+                self.page.screenshot(path="error_formulario_no_carga.png")
+                return False
             
             # Llenar formulario
             print("📝 LLENANDO FORMULARIO...")
