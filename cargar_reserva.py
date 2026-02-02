@@ -335,7 +335,10 @@ class RobotSACH:
                     # Navegar directamente a Nuevo Cliente
                     print("Navegando directamente a Nuevo Cliente...")
                     self.page.goto("https://sach.com.ar/cliente/nuevo")
-                    self.page.wait_for_timeout(1000)  # Reducido a 1 segundo
+                    
+                    # ESPERAR a que cargue la página completamente
+                    print("⏳ Esperando a que cargue el formulario...")
+                    self.page.wait_for_timeout(3000)  # 3 segundos para cargar
                     
                     print(f"URL después de navegar a Nuevo Cliente: {self.page.url}")
                     
@@ -344,31 +347,36 @@ class RobotSACH:
                         'input[name*="documento"]',
                         'input[name*="nombre"]',
                         'input[name*="apellido"]',
+                        'input[id*="documento"]',
+                        'input[id*="dni"]',
+                        '#ce_hue_nro_documento',
                         'form:has-text("Nuevo Cliente")',
                         'h1:has-text("Nuevo Cliente")',
                         'h2:has-text("Nuevo Cliente")',
-                        '.form-cliente'
+                        '.form-cliente',
+                        'form input[type="text"]',  # Cualquier form con input text
+                        'form'  # Cualquier formulario
                     ]
                     
                     form_found = False
                     for selector in nuevo_cliente_selectors:
                         try:
                             elem = self.page.locator(selector)
-                            if elem.count() > 0:
-                                print(f"✅ Formulario de Nuevo Cliente encontrado: {selector}")
+                            count = elem.count()
+                            if count > 0:
+                                print(f"✅ Formulario de Nuevo Cliente encontrado: {selector} ({count} elementos)")
                                 form_found = True
                                 break
-                        except:
+                        except Exception as e:
                             continue
                     
                     if form_found:
                         print("🎉 ¡Llegamos al formulario de Nuevo Cliente!")
-                        print("🔍 Rellenando formulario con datos de Carlos Ernesto Segovia...")
-                        
-                        # Rellenar formulario con los datos (necesitamos pasar los datos)
-                        return "FORM_READY"  # Indicar que el formulario está listo para rellenar
+                        return "FORM_READY"
                     else:
                         print("❌ No se encontró el formulario de Nuevo Cliente")
+                        print("📸 Guardando screenshot para debug...")
+                        self.page.screenshot(path="error_no_formulario.png")
                         return False
             else:
                 print("No se encontraron campos de login")
