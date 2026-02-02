@@ -21,11 +21,15 @@ class RobotSACH:
         self.sach_user = os.getenv('SACH_USER')
         self.sach_pass = os.getenv('SACH_PASS')
         
+        # Archivo para guardar sesión persistente
+        self.session_file = "sach_session.json"
+        
         # Inicializar contexto para evitar errores
         self.context = None
         
         print(f"DEBUG: Usuario leído del .env: '{self.sach_user}'")
         print(f"DEBUG: Contraseña leída del .env: '{self.sach_pass}'")
+        print(f"📁 Archivo de sesión: {self.session_file}")
         
         if not self.sach_user or not self.sach_pass:
             raise ValueError("SACH_USER y SACH_PASS deben estar configurados en .env")
@@ -34,7 +38,7 @@ class RobotSACH:
         self.page = None
     
     def iniciar_navegador(self):
-        """Inicia el navegador Playwright - versión simplificada sin storage_state"""
+        """Inicia el navegador Playwright - con sesión persistente"""
         try:
             print("🌐 Iniciando Playwright...")
             sys.stdout.flush()
@@ -55,15 +59,37 @@ class RobotSACH:
                 timeout=60000  # 60 segundos timeout
             )
             
-            # Contexto limpio sin storage_state
-            print("🆕 Creando contexto de navegador limpio...")
-            sys.stdout.flush()
-            self.context = self.browser.new_context(
-                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-            )
-            print("✅ Contexto limpio creado")
-            sys.stdout.flush()
+            # Verificar si existe sesión guardada
+            storage_state = None
+            if os.path.exists(self.session_file):
+                print(f"📂 Sesión previa encontrada: {self.session_file}")
+                try:
+                    with open(self.session_file, 'r') as f:
+                        storage_state = json.load(f)
+                    print("✅ Sesión cargada correctamente")
+                except Exception as e:
+                    print(f"⚠️ Error cargando sesión: {e}")
+                    storage_state = None
+            else:
+                print("🆕 No hay sesión previa, se creará una nueva")
             
+            # Crear contexto con o sin sesión guardada
+            if storage_state:
+                print("🔄 Creando contexto con sesión guardada...")
+                self.context = self.browser.new_context(
+                    storage_state=storage_state,
+                    user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+                )
+                print("✅ Contexto creado con sesión previa")
+            else:
+                print("🆕 Creando contexto de navegador limpio...")
+                sys.stdout.flush()
+                self.context = self.browser.new_context(
+                    user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+                )
+                print("✅ Contexto limpio creado")
+            
+            sys.stdout.flush()
             print("✅ Navegador instalado correctamente")
             sys.stdout.flush()
             
@@ -81,11 +107,30 @@ class RobotSACH:
             self.page = None
             return False
     
-    def cerrar_navegador(self):
-        """Cierra el navegador - versión simplificada sin storage_state"""
+    def guardar_sesion(self):
+        """Guarda el estado de la sesión para reutilizarlo"""
         try:
-            print("� Cerrando navegador...")
+            if self.context:
+                print("💾 Guardando sesión...")
+                storage_state = self.context.storage_state()
+                with open(self.session_file, 'w') as f:
+                    json.dump(storage_state, f)
+                print(f"✅ Sesión guardada en {self.session_file}")
+                sys.stdout.flush()
+                return True
+        except Exception as e:
+            print(f"⚠️ Error guardando sesión: {e}")
             sys.stdout.flush()
+        return False
+    
+    def cerrar_navegador(self):
+        """Cierra el navegador y guarda la sesión"""
+        try:
+            print("🔒 Cerrando navegador...")
+            sys.stdout.flush()
+            
+            # Guardar sesión antes de cerrar
+            self.guardar_sesion()
             
             if self.context:
                 self.context.close()
