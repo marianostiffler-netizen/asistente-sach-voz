@@ -492,42 +492,60 @@ class RobotSACH:
             print("Llenando formulario de Nuevo Cliente...")
             print(f"Datos recibidos: {datos_cliente}")
             
+            # DIAGNÓSTICO: Ver qué campos hay en la página
+            print("🔍 DIAGNÓSTICO: Buscando campos de entrada en la página...")
+            inputs = self.page.locator('input').all()
+            print(f"   Total de inputs encontrados: {len(inputs)}")
+            for i, inp in enumerate(inputs[:10]):  # Mostrar primeros 10
+                try:
+                    name = inp.get_attribute('name') or 'sin-name'
+                    id_attr = inp.get_attribute('id') or 'sin-id'
+                    type_attr = inp.get_attribute('type') or 'sin-type'
+                    print(f"   Input {i}: name={name}, id={id_attr}, type={type_attr}")
+                except:
+                    pass
+            sys.stdout.flush()
+            
             # PRIORIDAD ABSOLUTA AL DNI - Primero y obligatorio
             print("🔍 PRIORIDAD ABSOLUTA: Llenando DNI...")
             dni_lleno = False
             
-            # Intento 1: Selector exacto (sin timeout para velocidad)
-            try:
-                dni_locator = self.page.locator('#ce_hue_nro_documento')
-                dni_locator.fill('22455958')
-                self.page.keyboard.press('Tab')
-                
-                # Verificación rápida
-                dni_value = dni_locator.input_value()
-                if dni_value and dni_value.strip():
-                    print(f"✅ DNI escrito: {dni_value}")
-                    dni_lleno = True
-            except:
-                pass
+            # Lista de selectores a intentar para DNI
+            dni_selectores = [
+                '#ce_hue_nro_documento',
+                'input[name*="documento"]',
+                'input[name*="dni"]',
+                'input[id*="documento"]',
+                'input[id*="dni"]',
+                'input[placeholder*="Documento"]',
+                'input[placeholder*="DNI"]',
+                '//input[contains(@name, "document")]',
+            ]
             
-            # Intento 2: Selector alternativo (si el primero falló)
-            if not dni_lleno:
+            for selector in dni_selectores:
+                if dni_lleno:
+                    break
                 try:
-                    print("🔄 Selector alternativo...")
-                    dni_locator = self.page.get_by_role('textbox', name='Documento')
-                    dni_locator.fill('22455958')
-                    self.page.keyboard.press('Tab')
-                    
-                    dni_value = dni_locator.input_value()
-                    if dni_value and dni_value.strip():
-                        print(f"✅ DNI escrito: {dni_value}")
-                        dni_lleno = True
-                except:
-                    pass
+                    print(f"   Intentando selector: {selector}")
+                    dni_locator = self.page.locator(selector)
+                    if dni_locator.count() > 0:
+                        dni_locator.first.fill('22455958')
+                        self.page.wait_for_timeout(200)
+                        dni_value = dni_locator.first.input_value()
+                        if dni_value and dni_value.strip():
+                            print(f"✅ DNI escrito con selector {selector}: {dni_value}")
+                            dni_lleno = True
+                            break
+                except Exception as e:
+                    print(f"   Selector {selector} falló: {str(e)[:50]}")
+                    continue
             
             # SI EL DNI NO SE PUDO LLENAR, DETENER
             if not dni_lleno:
-                raise Exception("❌ CRÍTICO: No se pudo llenar el campo DNI obligatorio")
+                print("❌ CRÍTICO: No se pudo llenar el campo DNI obligatorio")
+                print("📸 Guardando screenshot para debug...")
+                self.page.screenshot(path="error_dni.png")
+                return False
             
             # Datos de prueba - llenado ultra rápido sin timeouts
             nombres_test = "Juan Manuel"
@@ -547,10 +565,6 @@ class RobotSACH:
             
             self.page.fill('input[name*="movil"], input[name*="celular"]', movil_test)
             print(f"✅ Teléfono Móvil: {movil_test}")
-            
-            # Campos opcionales - solo los esenciales que funcionan
-            # self.page.fill('input[name*="localidad"]', 'Rosario')  # Comentado por timeout
-            # self.page.fill('input[name*="postal"], input[name*="cp"]', '2000')  # Comentado por timeout
             
             print("✅ Formulario completado ultra rápido")
             return True
