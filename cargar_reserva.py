@@ -123,30 +123,42 @@ class RobotSACH:
             # VERIFICACIÓN: ¿Ya estamos logueados?
             print("🔍 VERIFICANDO SI YA ESTAMOS LOGUEADOS...")
             sys.stdout.flush()
-            dashboard_indicators = [
-                'Dashboard',
-                'Panel',
-                'Inicio',
-                'Reservas',
-                'Clientes',
-                'Cabañas',
-                'Logout',
-                'Cerrar sesión',
-                'Salir',
-                'Bienvenido',
-                'Welcome'
+            
+            # Buscar elementos específicos que SOLO aparecen logueado
+            logged_in_selectors = [
+                'a[href*="logout"]',  # Link de logout
+                'a[href*="salir"]',   # Link de salir
+                '.user-name',         # Nombre de usuario
+                '.navbar-user',       # Usuario en navbar
+                'a:has-text("Cerrar sesión")',
+                'a:has-text("Salir")',
+                '[class*="logout"]',
+                '[class*="user-menu"]'
             ]
             
-            page_content = self.page.content()
-            is_logged_in = any(indicator in page_content for indicator in dashboard_indicators)
+            is_logged_in = False
+            for selector in logged_in_selectors:
+                try:
+                    elem = self.page.locator(selector)
+                    if elem.count() > 0:
+                        print(f"✅ Elemento de sesión encontrado: {selector}")
+                        is_logged_in = True
+                        break
+                except:
+                    continue
+            
+            # También verificar que NO estemos en página de login
+            if is_logged_in and "iniciar" in self.page.url.lower():
+                print("⚠️ Elementos de sesión encontrados pero URL es de login - probablemente falso positivo")
+                is_logged_in = False
             
             if is_logged_in:
                 print("✅ LOGIN EXITOSO - YA ESTAMOS EN EL DASHBOARD")
                 sys.stdout.flush()
                 return "FORM_READY"
-            
-            print("🔐 NO ESTAMOS LOGUEADOS - PROCEDIENDO CON LOGIN...")
-            sys.stdout.flush()
+            else:
+                print("🔐 NO ESTAMOS LOGUEADOS - PROCEDIENDO CON LOGIN...")
+                sys.stdout.flush()
             
             # Buscar campos de login con más selectores específicos
             user_selectors = [
