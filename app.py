@@ -57,8 +57,14 @@ WHATSAPP_VERIFY_TOKEN = os.getenv('WHATSAPP_VERIFY_TOKEN', 'mytoken')
 WHATSAPP_PHONE_NUMBER_ID = os.getenv('WHATSAPP_PHONE_NUMBER_ID', '914504238421045')
 WHATSAPP_TOKEN = os.getenv('WHATSAPP_TOKEN')
 
-# Log para verificar qué token se está usando
-print(f'🔑 Usando token que empieza con: {WHATSAPP_TOKEN[:10] if WHATSAPP_TOKEN else "NONE"}')
+# Verificación CRÍTICA del token
+if not WHATSAPP_TOKEN:
+    print('❌ ERROR CRÍTICO: WHATSAPP_TOKEN no está configurado')
+    print('� Debes agregar la variable de entorno WHATSAPP_TOKEN en Railway')
+    print('📝 Ve a Railway Dashboard → Variables → Agregar WHATSAPP_TOKEN')
+else:
+    print(f'🔑 Token configurado correctamente: {WHATSAPP_TOKEN[:10]}...')
+    
 print(f'📱 Phone ID: {WHATSAPP_PHONE_NUMBER_ID}')
 print(f'🔐 Verify Token: {WHATSAPP_VERIFY_TOKEN}')
 
@@ -263,11 +269,19 @@ def get_media_url(media_id):
         'Authorization': f'Bearer {WHATSAPP_TOKEN}'
     }
     
+    print(f"🔍 DIAGNÓSTICO: Obteniendo URL para media_id: {media_id}")
+    print(f"🔍 Token usado (primeros 20 chars): {WHATSAPP_TOKEN[:20] if WHATSAPP_TOKEN else 'VACÍO'}...")
+    sys.stdout.flush()
+    
     response = requests.get(url, headers=headers)
+    
     if response.status_code == 200:
         return response.json()['url']
     else:
-        raise Exception(f"Error getting media URL: {response.status_code}")
+        print(f"❌ ERROR {response.status_code}: {response.text}")
+        print(f"❌ Headers enviados: {headers}")
+        sys.stdout.flush()
+        raise Exception(f"Error getting media URL: {response.status_code} - {response.text}")
 
 def download_audio(audio_url):
     """Descargar archivo de audio"""
