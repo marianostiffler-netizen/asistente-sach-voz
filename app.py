@@ -136,23 +136,38 @@ def handle_audio_message(message):
             # PROCESAMIENTO DE AUDIO CON CAPTURA DE ERRORES
             print("🎙️ INTENTANDO TRANSCRIBIR CON GROQ...")
             sys.stdout.flush()
-            
-            texto_transcrito = procesador_audio.transcribir_audio(temp_audio_path)
-            print(f"📝 TEXTO RECIBIDO DE GROQ: {texto_transcrito}")
-            sys.stdout.flush()
-            
-            if not texto_transcrito or texto_transcrito.strip() == "":
-                print("❌ ERROR: La transcripción está vacía")
+
+            try:
+                texto_transcrito = procesador_audio.transcribir_audio(temp_audio_path)
+                print(f"📝 TEXTO RECIBIDO DE GROQ: {texto_transcrito}")
+                sys.stdout.flush()
+
+                if not texto_transcrito or texto_transcrito.strip() == "":
+                    print("❌ ERROR: La transcripción está vacía")
+                    sys.stdout.flush()
+                    return
+
+            except Exception as transcribe_error:
+                print(f"❌ ERROR EN TRANSCRIPCIÓN: {transcribe_error}")
+                print(f"❌ TIPO DE ERROR: {type(transcribe_error).__name__}")
+                import traceback
+                print(f"❌ TRACEBACK: {traceback.format_exc()}")
                 sys.stdout.flush()
                 return
-            
+
             # Extraer datos de la reserva
             print("🔍 EXTRAYENDO DATOS DE LA RESERVA...")
             sys.stdout.flush()
+
             datos_reserva = procesador_audio.extraer_datos_reserva(texto_transcrito)
             print(f"📊 DATOS EXTRAÍDOS: {datos_reserva}")
             sys.stdout.flush()
-            
+
+            if not datos_reserva:
+                print("❌ ERROR: No se pudieron extraer datos de la reserva")
+                sys.stdout.flush()
+                return
+
             # Cargar en SACH
             print("🤖 INICIANDO PROCESO SACH...")
             sys.stdout.flush()

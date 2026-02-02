@@ -316,7 +316,7 @@ class RobotSACH:
                                 continue
                         
                         return False
-                
+            
                 if login_successful:
                     print(f"✅ Login exitoso - URL actual: {self.page.url}")
                     
@@ -363,7 +363,7 @@ class RobotSACH:
                 print("Capturando screenshot para debug...")
                 self.page.screenshot(path="debug_login.png")
                 return False
-                
+            
         except Exception as e:
             print(f"Error en login: {e}")
             return False
@@ -586,7 +586,7 @@ class RobotSACH:
                     print("✅ BOTÓN GUARDAR CLICKEADO (ROLE)")
                     print("✅ FORMULARIO ENVIADO CORRECTAMENTE")
                     sys.stdout.flush()
-                
+            
                 # Backup adicional: selector de submit
                 if guardar_btn.count() == 0:
                     print("🔄 INTENTANDO CON SELECTOR SUBMIT...")
@@ -597,7 +597,7 @@ class RobotSACH:
                         print("✅ BOTÓN SUBMIT CLICKEADO")
                         print("✅ FORMULARIO ENVIADO CORRECTAMENTE")
                         sys.stdout.flush()
-                
+            
                 # Backup final: presionar Enter
                 print("🔄 INTENTANDO CON PRESIONAR ENTER...")
                 sys.stdout.flush()
@@ -605,10 +605,10 @@ class RobotSACH:
                 print("✅ ENTER PRESIONADO")
                 print("✅ FORMULARIO ENVIADO CORRECTAMENTE")
                 sys.stdout.flush()
-                
+            
                 # Espera mínima y verificación
                 self.page.wait_for_timeout(500)
-                
+            
                 if "cliente/nuevo" not in self.page.url:
                     print("✅ Cliente guardado - URL cambió")
                     self.page.screenshot(path="comprobacion_final.png")
@@ -616,18 +616,18 @@ class RobotSACH:
                     return True
             except:
                 pass
-            
+        
             # Backup: Enter instantáneo
             self.page.keyboard.press('Enter')
             self.page.wait_for_timeout(500)
-            
+        
             if "cliente/nuevo" not in self.page.url:
                 print("✅ Cliente guardado con Enter")
                 self.page.screenshot(path="comprobacion_final.png")
                 return True
-            
+        
             return True
-            
+        
         except Exception as e:
             print(f"Error guardando: {e}")
             return False
